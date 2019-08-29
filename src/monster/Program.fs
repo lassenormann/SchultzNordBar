@@ -46,7 +46,7 @@ let configureApp (app : IApplicationBuilder) =
     (match env.IsDevelopment() with
     | true  -> app.UseDeveloperExceptionPage()
     | false -> app.UseGiraffeErrorHandler errorHandler)
-        .UseHttpsRedirection()
+        .UseHttpsRedirection()        
         .UseCors(configureCors)
         .UseGiraffe(webApp)
 
@@ -63,7 +63,7 @@ let configureLogging (builder : ILoggingBuilder) =
 let main _ =
     WebHostBuilder()
         .UseKestrel()
-        .UseIISIntegration()
+        .UseUrls("http://localhost:3000") 
         .Configure(Action<IApplicationBuilder> configureApp)
         .ConfigureServices(configureServices)
         .ConfigureLogging(configureLogging)
