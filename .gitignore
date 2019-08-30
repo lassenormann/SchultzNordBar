@@ -12,5 +12,6 @@ bin
 /build/
 *.exe
 !.paket/paket.bootstrapper.exe
+.ionide
 
 # End of https://www.gitignore.io/api/fsharp

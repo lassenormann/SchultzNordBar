@@ -64,7 +64,7 @@ let configureLogging (builder : ILoggingBuilder) =
 let main _ =
     WebHostBuilder()
         .UseKestrel()
-        .UseUrls("http://localhost:3000") 
+        .UseUrls("http://localhost:3000", "http://10.10.219.68:3000") 
         .Configure(Action<IApplicationBuilder> configureApp)
         .ConfigureServices(configureServices)
         .ConfigureLogging(configureLogging)
