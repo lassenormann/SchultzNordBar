@@ -5,39 +5,43 @@ open System.Text.RegularExpressions
 module HttpHandlers =
 
     open Microsoft.AspNetCore.Http
-    open FSharp.Control.Tasks.V2.ContextInsensitive
     open Giraffe
-    open monster.Models
-
-    let handleGetHello' =
-        fun (next : HttpFunc) (ctx : HttpContext) ->
-            task {
-                let response = {
-                    Text = "Hello world, from Giraffe!"
-                }
-                return! json response next ctx
-            }
     
-    let handleGetHello =
+    let handleNotFound = 
         fun (next : HttpFunc) (ctx : HttpContext) ->
-            let response = {
-                Text = "Hello world, from Giraffe!"
-            }
-            json response next ctx
+            printfn "%s" ctx.Request.Path.Value
+            text ctx.Request.Path.Value next ctx
 
-    let (|FirstRegexGroup|_|) pattern input =
+
+    type Question = Sum of (int*int) | Subtract of (int*int) | Power of (int*int)
+    
+    let (|TwoRegexGroup|_|) pattern input =
         let m = Regex.Match(input,pattern) 
-        if (m.Success) then Some m.Groups.[1].Value else None  
+        if (m.Success && m.Groups.Count = 3) then Some (m.Groups.[1].Value, m.Groups.[2].Value) else None  
 
-    let testRegex str = 
+    let parseQuestion str = 
         match str with
-        | FirstRegexGroup "http://(.*?)/(.*)" host -> 
-               sprintf "The value is a url and the host is %s" host
-        | FirstRegexGroup ".*?@(.*)" host -> 
-               sprintf "The value is an email and the host is %s" host
-        | _ -> sprintf "The value '%s' is something else" str
+        | TwoRegexGroup "(\d+) plus (\d+)" (i1, i2) -> Some (Sum (i1 |> int, i2 |> int))                
+        | TwoRegexGroup "(\d+) minus (\d+)" (i1, i2) -> Some (Subtract (i1 |> int, i2 |> int))                
+        | TwoRegexGroup "what is (\d+) to the power of (\d+)" (i1, i2) -> Some (Power (i1 |> int, i2 |> int))                
+        | _ -> None
     
-    let  handleParse str = 
+    let answer = function
+        | Sum (i1, i2) -> i1 + i2
+        | Subtract (i1, i2) -> i1 - i2
+        | Power (i1, i2) -> pown i1 i2
+        
+    let  handleParse =       
         fun (next : HttpFunc) (ctx : HttpContext) -> 
-            (testRegex str |> text) next ctx
+            let queryQuestion =
+                match ctx.TryGetQueryStringValue "q" with
+                | None   -> ""
+                | Some q -> q
+            printfn "Query question: %s" queryQuestion
+            let answer =  
+                match (parseQuestion queryQuestion) with
+                | None -> "Does not parse as question"
+                | Some question -> answer question |> string
+            printfn "Answer: %s" answer
+            (answer |> text) next ctx
             

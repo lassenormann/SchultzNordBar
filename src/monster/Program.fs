@@ -18,11 +18,10 @@ let webApp =
         subRoute "/api"
             (choose [
                 GET >=> choose [
-                    route "/hello" >=> handleGetHello
-                    routef "/parse/%s" handleParse                            
+                    route "/hello" >=> handleParse                                           
                 ]
             ])
-        setStatusCode 404 >=> text "Not Found" ]
+        setStatusCode 404 >=> handleNotFound ]
 
 // ---------------------------------
 // Error handler
@@ -44,9 +43,7 @@ let configureCors (builder : CorsPolicyBuilder) =
 
 let configureApp (app : IApplicationBuilder) =
     let env = app.ApplicationServices.GetService<IHostingEnvironment>()
-    (match env.IsDevelopment() with
-    | true  -> app.UseDeveloperExceptionPage()
-    | false -> app.UseGiraffeErrorHandler errorHandler)
+    (app.UseGiraffeErrorHandler errorHandler)
         .UseHttpsRedirection()        
         .UseCors(configureCors)
         .UseGiraffe(webApp)
@@ -56,7 +53,7 @@ let configureServices (services : IServiceCollection) =
     services.AddGiraffe() |> ignore
 
 let configureLogging (builder : ILoggingBuilder) =
-    builder.AddFilter(fun l -> l.Equals LogLevel.Error)
+    builder.AddFilter(fun l -> l.Equals LogLevel.Trace)                      
            .AddConsole()
            .AddDebug() |> ignore
 
@@ -64,7 +61,8 @@ let configureLogging (builder : ILoggingBuilder) =
 let main _ =
     WebHostBuilder()
         .UseKestrel()
-        .UseUrls("http://localhost:3000", "http://10.10.219.68:3000") 
+        // .UseUrls("http://localhost:3000", "http://<your IP on 219>:3000") 
+        .UseUrls("http://localhost:3000") 
         .Configure(Action<IApplicationBuilder> configureApp)
         .ConfigureServices(configureServices)
         .ConfigureLogging(configureLogging)
